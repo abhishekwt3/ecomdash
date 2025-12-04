@@ -102,11 +102,16 @@ export function Sidebar({
         </nav>
 
         <div className="p-3 border-t border-sidebar-border space-y-1">
+      {/* UPDATED SETTINGS BUTTON */}
           <button
+            onClick={() => handleNavClick('settings')}
             title={collapsed ? "Settings" : undefined}
             className={cn(
-              "w-full flex items-center rounded-lg text-sm font-medium text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors",
+              "w-full flex items-center rounded-lg text-sm font-medium transition-colors",
               collapsed ? "lg:justify-center lg:p-2.5 gap-3 px-3 py-2.5" : "gap-3 px-3 py-2.5",
+              activeSection === 'settings' 
+                ? "bg-sidebar-accent text-sidebar-foreground" 
+                : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
             )}
           >
             <Settings className="w-5 h-5 shrink-0" />

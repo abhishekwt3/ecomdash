@@ -1,19 +1,12 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { MetricCard } from "@/components/metric-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { DollarSign, TrendingUp, ShoppingCart, Target, Percent, Megaphone, Receipt } from "lucide-react"
+import { DollarSign, TrendingUp, ShoppingCart, Target, Percent, Megaphone, Receipt, Loader2 } from "lucide-react"
 import { Area, AreaChart, XAxis, YAxis, ResponsiveContainer, Tooltip, Bar, BarChart, CartesianGrid } from "recharts"
-
-const revenueData = [
-  { date: "Jan", revenue: 45000, profit: 12000 },
-  { date: "Feb", revenue: 52000, profit: 15000 },
-  { date: "Mar", revenue: 48000, profit: 13500 },
-  { date: "Apr", revenue: 61000, profit: 18000 },
-  { date: "May", revenue: 55000, profit: 16000 },
-  { date: "Jun", revenue: 67000, profit: 21000 },
-  { date: "Jul", revenue: 72000, profit: 24000 },
-]
+import { apiClient } from "@/lib/api/client"
+import { useAuth } from "@/contexts/AuthContext"
 
 const cashFlowData = [
   { month: "Jan", inflow: 52000, outflow: 38000 },
@@ -25,6 +18,49 @@ const cashFlowData = [
 ]
 
 export function MainDashboard() {
+  const { user, loading: authLoading } = useAuth();
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Guard: Do not fetch if auth is still loading or if user is not logged in
+    if (authLoading || !user) {
+      return;
+    }
+
+    async function fetchData() {
+      try {
+        const metrics = await apiClient.getMainMetrics(user?.activeWorkspace?._id);
+        setData(metrics);
+      } catch (e) {
+        console.error("Failed to fetch dashboard metrics:", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [user, authLoading]);
+
+  if (authLoading || loading) {
+    return <div className="h-96 flex items-center justify-center"><Loader2 className="animate-spin w-8 h-8 text-primary" /></div>;
+  }
+
+  if (!data) {
+    return (
+      <div className="h-96 flex flex-col items-center justify-center text-muted-foreground gap-2">
+        <p>Unable to load dashboard data.</p>
+        <p className="text-sm">Please ensure you are connected to the backend.</p>
+      </div>
+    );
+  }
+
+  // Transform backend history arrays into Recharts format safely
+  const chartData = data.revenue?.history?.map((rev: number, i: number) => ({
+    date: `Day ${i+1}`,
+    revenue: rev,
+    profit: data.profit?.history?.[i] || 0
+  })) || [];
+
   return (
     <div className="space-y-6">
       <div>
@@ -33,16 +69,16 @@ export function MainDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard title="Total Revenue" value="$428,500" change={12.5} icon={DollarSign} variant="success" />
-        <MetricCard title="Net Profit" value="$119,500" change={8.2} icon={TrendingUp} variant="success" />
-        <MetricCard title="Total Orders" value="3,847" change={15.3} icon={ShoppingCart} />
-        <MetricCard title="ROI" value="42.8%" change={5.1} icon={Target} variant="info" />
+        <MetricCard title="Total Revenue" value={`$${(data.revenue?.value || 0).toLocaleString()}`} change={data.revenue?.change} icon={DollarSign} variant="success" />
+        <MetricCard title="Net Profit" value={`$${(data.profit?.value || 0).toLocaleString()}`} change={data.profit?.change} icon={TrendingUp} variant="success" />
+        <MetricCard title="Total Orders" value={(data.orders?.value || 0).toLocaleString()} change={data.orders?.change} icon={ShoppingCart} />
+        <MetricCard title="ROI" value={`${data.roi?.value || 0}%`} change={data.roi?.change} icon={Target} variant="info" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <MetricCard title="Conversion Rate" value={`${data.conversionRate?.value || 0}%`} change={data.conversionRate?.change} icon={Percent} />
+        <MetricCard title="AOV" value={`$${data.aov?.value || 0}`} change={data.aov?.change} icon={Receipt} variant="success" />
         <MetricCard title="Gross Margin" value="67.5%" change={2.3} icon={Percent} />
-        <MetricCard title="Ad Spend" value="$52,400" change={-3.2} icon={Megaphone} variant="warning" />
-        <MetricCard title="Cash Flow" value="+$89,200" change={18.7} icon={Receipt} variant="success" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -53,7 +89,7 @@ export function MainDashboard() {
           <CardContent>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueData}>
+                <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
@@ -65,39 +101,10 @@ export function MainDashboard() {
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="date" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis
-                    stroke="#6b7280"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => `$${value / 1000}k`}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#1f2937",
-                      border: "1px solid #374151",
-                      borderRadius: "8px",
-                    }}
-                    labelStyle={{ color: "#f3f4f6" }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="#22c55e"
-                    strokeWidth={2}
-                    fillOpacity={1}
-                    fill="url(#revenueGradient)"
-                    name="Revenue"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="profit"
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    fillOpacity={1}
-                    fill="url(#profitGradient)"
-                    name="Profit"
-                  />
+                  <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value / 1000}k`} />
+                  <Tooltip contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: "8px" }} labelStyle={{ color: "#f3f4f6" }} />
+                  <Area type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2} fillOpacity={1} fill="url(#revenueGradient)" name="Revenue" />
+                  <Area type="monotone" dataKey="profit" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#profitGradient)" name="Profit" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>

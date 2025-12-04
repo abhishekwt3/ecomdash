@@ -1,5 +1,4 @@
 "use client"
-
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/sidebar"
@@ -8,8 +7,8 @@ import { AdsData } from "@/components/ads-data"
 import { WebsiteData } from "@/components/website-data"
 import { CostCentre } from "@/components/cost-centre"
 import { AIInsights } from "@/components/ai-insights"
+import { IntegrationsSettings } from "@/components/integrations-settings"
 import { Header } from "@/components/header"
-
 export default function DashboardPage() {
   const router = useRouter()
   const [activeSection, setActiveSection] = useState("dashboard")
@@ -35,7 +34,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen bg-background overflow-hidden">
       <Sidebar
         activeSection={activeSection}
         onSectionChange={setActiveSection}
@@ -44,14 +43,16 @@ export default function DashboardPage() {
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}
       />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-full">
         <Header onMenuClick={() => setMobileOpen(true)} />
-        <main className="flex-1 p-4 md:p-6 overflow-auto">
+        <main className="flex-1 p-4 md:p-6 overflow-y-auto">
           {activeSection === "dashboard" && <MainDashboard />}
           {activeSection === "ads" && <AdsData />}
           {activeSection === "website" && <WebsiteData />}
           {activeSection === "costs" && <CostCentre />}
           {activeSection === "insights" && <AIInsights />}
+          {/* NEW ROUTE */}
+          {activeSection === "settings" && <IntegrationsSettings />} 
         </main>
       </div>
     </div>

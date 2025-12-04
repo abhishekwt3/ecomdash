@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api';
 
 class ApiClient {
   baseURL: string;
@@ -78,99 +78,56 @@ class ApiClient {
     return this.get('/auth/me');
   }
 
-  async switchWorkspace(workspaceId: string) {
-    return this.post('/auth/switch-workspace', { workspaceId });
+  // Dashboard & Metrics Endpoints (Updated to match Backend)
+  async getMainMetrics(workspaceId?: string) {
+    const query = workspaceId ? `?workspaceId=${workspaceId}` : '';
+    return this.get(`/metrics${query}`);
   }
 
-  // Metrics endpoints
-  async getMetrics(workspaceId: string, params?: { from?: string; to?: string; period?: string }) {
-    const queryString = new URLSearchParams({
-      workspaceId,
-      ...params,
-    } as any).toString();
-    return this.get(`/metrics?${queryString}`);
+  async getAdsMetrics(workspaceId?: string) {
+    const query = workspaceId ? `?workspaceId=${workspaceId}` : '';
+    return this.get(`/metrics/ads${query}`);
   }
 
-  async getMetricsTrend(workspaceId: string, params?: { from?: string; to?: string; period?: string }) {
-    const queryString = new URLSearchParams({
-      workspaceId,
-      ...params,
-    } as any).toString();
-    return this.get(`/metrics/trend?${queryString}`);
-  }
-
-  async refreshMetrics(workspaceId: string, params?: { from?: string; to?: string }) {
-    const queryString = new URLSearchParams({
-      workspaceId,
-      ...params,
-    } as any).toString();
-    return this.post(`/metrics/refresh?${queryString}`, {});
-  }
-
-  async getChannelPerformance(workspaceId: string, params?: { from?: string; to?: string }) {
-    const queryString = new URLSearchParams({
-      workspaceId,
-      ...params,
-    } as any).toString();
-    return this.get(`/metrics/channel-performance?${queryString}`);
+  async getWebsiteMetrics(workspaceId?: string) {
+    const query = workspaceId ? `?workspaceId=${workspaceId}` : '';
+    return this.get(`/metrics/website${query}`);
   }
 
   // Costs endpoints
-  async getCosts(workspaceId: string) {
-    return this.get(`/costs?workspaceId=${workspaceId}`);
+  async getCosts(workspaceId?: string) {
+    const query = workspaceId ? `?workspaceId=${workspaceId}` : '';
+    return this.get(`/costs${query}`);
   }
 
-  async createCost(workspaceId: string, data: any) {
-    return this.post(`/costs?workspaceId=${workspaceId}`, data);
+  async createCost(workspaceId: string | undefined, data: any) {
+    const query = workspaceId ? `?workspaceId=${workspaceId}` : '';
+    return this.post(`/costs${query}`, data);
   }
 
-  async updateCost(workspaceId: string, costId: string, data: any) {
-    return this.put(`/costs/${costId}?workspaceId=${workspaceId}`, data);
-  }
-
-  async deleteCost(workspaceId: string, costId: string) {
-    return this.delete(`/costs/${costId}?workspaceId=${workspaceId}`);
-  }
-
-  async getCostBreakdown(workspaceId: string) {
-    return this.get(`/costs/breakdown?workspaceId=${workspaceId}`);
+  async deleteCost(id: string) {
+    return this.delete(`/costs/${id}`);
   }
 
   // Integrations endpoints
-  async getIntegrationStatus(workspaceId: string) {
-    return this.get(`/integrations/status?workspaceId=${workspaceId}`);
+ async getIntegrationStatus(workspaceId?: string) {
+    const query = workspaceId ? `?workspaceId=${workspaceId}` : '';
+    return this.get(`/integrations/status${query}`);
   }
 
-  async connectShopify(workspaceId: string, data: { shopUrl: string; accessToken: string }) {
-    return this.post(`/integrations/shopify/connect?workspaceId=${workspaceId}`, data);
+  async connectShopify(workspaceId: string | undefined, data: { shopUrl: string; accessToken: string }) {
+    const query = workspaceId ? `?workspaceId=${workspaceId}` : '';
+    return this.post(`/integrations/shopify/connect${query}`, data);
   }
 
-  async syncShopify(workspaceId: string, params?: { from?: string; to?: string }) {
-    const queryString = new URLSearchParams({
-      workspaceId,
-      ...params,
-    } as any).toString();
-    return this.post(`/integrations/shopify/sync?${queryString}`, {});
+  async connectMeta(workspaceId: string | undefined, data: { accessToken: string; adAccountId: string }) {
+    const query = workspaceId ? `?workspaceId=${workspaceId}` : '';
+    return this.post(`/integrations/meta/connect${query}`, data);
   }
 
-  async disconnectShopify(workspaceId: string) {
-    return this.post(`/integrations/shopify/disconnect?workspaceId=${workspaceId}`, {});
-  }
-
-  async connectFacebook(workspaceId: string, data: { adAccountId: string; accessToken: string }) {
-    return this.post(`/integrations/facebook/connect?workspaceId=${workspaceId}`, data);
-  }
-
-  async syncFacebook(workspaceId: string, params?: { from?: string; to?: string }) {
-    const queryString = new URLSearchParams({
-      workspaceId,
-      ...params,
-    } as any).toString();
-    return this.post(`/integrations/facebook/sync?${queryString}`, {});
-  }
-
-  async disconnectFacebook(workspaceId: string) {
-    return this.post(`/integrations/facebook/disconnect?workspaceId=${workspaceId}`, {});
+  async disconnectIntegration(workspaceId: string | undefined, platform: string) {
+    const query = workspaceId ? `?workspaceId=${workspaceId}` : '';
+    return this.post(`/integrations/${platform}/disconnect${query}`, {});
   }
 }
 
